@@ -9,6 +9,8 @@ import jakarta.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,21 +20,25 @@ import java.util.List;
 @Service
 public class MileageRewardService {
     private static final Logger log = LoggerFactory.getLogger(MileageRewardService.class);
+    @Autowired
     private final RideRepository rideRepository;
+    @Autowired
     private final RewardTransactionRepository rewardRepo;
+    @Autowired
     private final UserRepository userRepository;
 
-    public MileageRewardService(RideRepository rideRepository, RewardTransactionRepository rewardRepo,UserRepository userRepository) {
+    public MileageRewardService(RideRepository rideRepository,
+                                RewardTransactionRepository rewardTransactionRepository,
+                                UserRepository userRepository) {
         this.rideRepository = rideRepository;
-        this.rewardRepo = rewardRepo;
+        this.rewardRepo = rewardTransactionRepository;
         this.userRepository = userRepository;
-        log.info("Mileage job started at {}", LocalDateTime.now());
-        // sendEmail("Mileage job started at " + LocalDateTime.now());
-
     }
 
-    @Transactional
+    @Scheduled(cron = "${job.mileage.reward.cron}")
     public void processDailyRewards() {
+        log.info("▶️ Mileage job started at {}", LocalDateTime.now());
+
         LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
         LocalDateTime start = yesterday.toLocalDate().atStartOfDay();
         LocalDateTime end = start.plusDays(1);
@@ -42,19 +48,35 @@ public class MileageRewardService {
         for (Ride ride : rides) {
             try {
                 if (!rewardRepo.existsByUserIdAndRideIdAndType(ride.getUserId(), ride.getId(), "SELF")) {
-                    rewardRepo.save(new RewardTransaction(null, ride.getUserId(),
-                            BigDecimal.valueOf(ride.getDistanceKm() * 0.01), "SELF"));
-                }
-                UserRepository userRepository = null;
-                RewardTransactionRepository rewardTransactionRepository = null;
-                Long referrerId = userRepository.findReferrerIdByUserId(ride.getUserId());
-                if (referrerId != null && !rewardTransactionRepository.existsByUserIdAndRideIdAndType(referrerId, ride.getId(), "REFERRAL")) {
-                    rewardTransactionRepository.save(new RewardTransaction(
-                            referrerId, ride.getId(),
-                            BigDecimal.valueOf(ride.getDistanceKm() * 0.001),
-                            "REFERRAL"
+                    BigDecimal points = BigDecimal.valueOf(ride.getDistanceKm() * 0.01);
+                    rewardRepo.save(new RewardTransaction(
+                            null,
+                            ride.getUserId(),
+                            ride.getId(),
+                            points,
+                            "SELF",
+                            LocalDateTime.now()
                     ));
                 }
+
+                Long referrerId = userRepository.findReferrerIdByUserId(ride.getUserId());
+                if (referrerId != null &&
+                        !rewardRepo.existsByUserIdAndRideIdAndType(referrerId, ride.getId(), "REFERRAL")) {
+                    try {
+                        rewardRepo.save(new RewardTransaction(
+                                ride.getUserId(),
+                                referrerId,
+                                ride.getId(),
+                                BigDecimal.valueOf(ride.getDistanceKm() * 0.005),
+                                "REFERRAL",
+                                LocalDateTime.now()
+                        ));
+                    } catch (Exception e) {
+                        log.error("Error processing ride ID: {}", ride.getId(), e);
+                    }
+
+                }
+
             } catch (Exception e) {
                 System.err.println("Error processing ride ID: " + ride.getId());
                 e.printStackTrace();

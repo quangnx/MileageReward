@@ -22,7 +22,7 @@ public class RewardTransaction {
 
     public RewardTransaction() {}
 
-    public RewardTransaction(Long userId, Long rideId, BigDecimal points, String type) {
+    public RewardTransaction(Long userId, Long rideId, Long id, BigDecimal points, String type, LocalDateTime now) {
         this.userId = userId;
         this.rideId = rideId;
         this.points = points;

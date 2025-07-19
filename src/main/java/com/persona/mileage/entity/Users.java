@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "k_users")
 public class Users {
 
     @Id
@@ -13,11 +14,15 @@ public class Users {
     private String name;
     private String passwordHash;
     private String email;
-     private LocalDateTime createdAt;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-     private String referralCode;
+    @Column(name = "referral_code")
+    private String referralCode;
 
+    @Column(name = "referrer_id")
     private Long referrerId;
 
     public Long getId() { return id; }

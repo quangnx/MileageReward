@@ -40,6 +40,13 @@ public class MileageRewardServiceTest {
     private Ride ride;
     @BeforeEach
     void setup() {
+        // MockitoAnnotations.openMocks(this);
+        mileageRewardService = new MileageRewardService(
+                rideRepository,
+                rewardTransactionRepository,
+                userRepository // truyền đúng mock vào đây
+        );
+
         ride = new Ride();
         ride.setId(10L);
         ride.setUserId(1001L);
@@ -73,13 +80,17 @@ public class MileageRewardServiceTest {
     void shouldLogErrorWhenSavingRewardFails() {
         when(rideRepository.findByStatusAndCompletedAtBetween(eq("COMPLETED"), any(), any()))
                 .thenReturn(List.of(ride));
-        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(1001L), eq(10L), eq("SELF")))
+        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(any(), any(), any()))
                 .thenReturn(false);
-        when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(null);
+
+        // Dòng này có thể gây lỗi nếu không dùng lenient()
+        lenient().when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(null);
+
         doThrow(new RuntimeException("DB error"))
                 .when(rewardTransactionRepository).save(any());
 
         assertDoesNotThrow(() -> mileageRewardService.processDailyRewards());
+
         verify(rewardTransactionRepository).save(any());
     }
 
@@ -91,6 +102,7 @@ public class MileageRewardServiceTest {
                 .thenReturn(false);
         when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(2002L), eq(10L), eq("REFERRAL")))
                 .thenReturn(false);
+        lenient().when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(null);
         when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(2002L);
 
         mileageRewardService.processDailyRewards();
