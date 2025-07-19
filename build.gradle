@@ -1,0 +1,40 @@
+plugins {
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.3'
+    id 'java'
+}
+
+group = 'com.example'
+version = '1.0.0.1'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'mysql:mysql-connector-java:8.0.33'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+}
+
+bootJar {
+    archiveBaseName.set('mileage-job') // ← tên file mong muốn
+    archiveVersion.set('')
+    archiveClassifier.set('')
+    manifest {
+        attributes(
+                'Implementation-Title': 'Mileage Job',
+                'Implementation-Version': version
+        )
+    }
+}
+
+jar {
+    enabled = false   // vô hiệu hóa jar phụ (non-boot)
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
