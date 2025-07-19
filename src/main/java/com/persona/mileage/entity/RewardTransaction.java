@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "reward_transactions")
 public class RewardTransaction {
 
     @Id
@@ -21,13 +22,12 @@ public class RewardTransaction {
 
     public RewardTransaction() {}
 
-    public RewardTransaction(Long id, Long userId, Long rideId, BigDecimal points, String type, LocalDateTime createdAt) {
-        this.id = id;
+    public RewardTransaction(Long userId, Long rideId, BigDecimal points, String type) {
         this.userId = userId;
         this.rideId = rideId;
         this.points = points;
         this.type = type;
-        this.createdAt = createdAt;
+        this.createdAt = LocalDateTime.now();
     }
 
     // Getters
@@ -70,15 +70,9 @@ public class RewardTransaction {
         this.rideId = rideId;
     }
 
-    public void setPoints(BigDecimal points) {
-        this.points = points;
-    }
+    public void setPoints(BigDecimal points) { this.points = points; }
 
-    public void setType(String type) {
-        this.type = type;
-    }
+    public void setType(String type) { this.type = type; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

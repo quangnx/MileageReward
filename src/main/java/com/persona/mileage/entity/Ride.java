@@ -51,17 +51,11 @@ public class Ride {
         this.id = id;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    public void setUserId(Long userId) { this.userId = userId; }
 
-    public void setDistanceKm(double distanceKm) {
-        this.distanceKm = distanceKm;
-    }
+    public void setDistanceKm(double distanceKm) { this.distanceKm = distanceKm; }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public void setStatus(String status) { this.status = status; }
 
     public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
