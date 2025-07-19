@@ -4,8 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class MileageApplication {
+public class MileageRewardApplication {
     public static void main(String[] args) {
-        SpringApplication.run(MileageApplication.class, args);
+        SpringApplication.run(MileageRewardApplication.class, args);
     }
 }

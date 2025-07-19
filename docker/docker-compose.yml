@@ -1,0 +1,31 @@
+services:
+  mileage-reward-job:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: mileage-reward-job
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      TZ: Asia/Ha_Noi
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mileage
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: xA123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
