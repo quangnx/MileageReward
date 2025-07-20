@@ -49,9 +49,9 @@ public class MileageRewardServiceTest {
 
         ride = new Ride();
         ride.setId(10L);
-        ride.setUserId(1001L);
-        ride.setDistanceKm(50.0);
-        ride.setStatus("COMPLETED");
+        ride.setUserId(10L);
+        ride.setDistanceKm(12.0);
+        ride.setStatus("completed");
         ride.setCompletedAt(LocalDateTime.now().minusDays(1));
     }
 
@@ -60,11 +60,11 @@ public class MileageRewardServiceTest {
 
     @Test
     void shouldCalculateCorrectRewardPoints() {
-        when(rideRepository.findByStatusAndCompletedAtBetween(eq("COMPLETED"), any(), any()))
+        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(List.of(ride));
-        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(1001L), eq(10L), eq("SELF")))
+        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(10L), eq(10L), eq("self")))
                 .thenReturn(false);
-        when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(null);
+        when(userRepository.findReferrerIdByUserId(10L)).thenReturn(null);
 
         mileageRewardService.processDailyRewards();
 
@@ -73,12 +73,12 @@ public class MileageRewardServiceTest {
 
         RewardTransaction reward = captor.getValue();
         assertEquals(0, reward.getPoints().compareTo(BigDecimal.valueOf(0.5)));
-        assertEquals("SELF", reward.getType());
+        assertEquals("self", reward.getType());
     }
 
     @Test
     void shouldLogErrorWhenSavingRewardFails() {
-        when(rideRepository.findByStatusAndCompletedAtBetween(eq("COMPLETED"), any(), any()))
+        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(), any()))
                 .thenReturn(List.of(ride));
         when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(any(), any(), any()))
                 .thenReturn(false);
@@ -96,11 +96,11 @@ public class MileageRewardServiceTest {
 
     @Test
     void shouldSaveBothSelfAndReferralRewards() {
-        when(rideRepository.findByStatusAndCompletedAtBetween(eq("COMPLETED"), any(), any()))
+        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(), any()))
                 .thenReturn(List.of(ride));
-        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(1001L), eq(10L), eq("SELF")))
+        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(1001L), eq(10L), eq("self")))
                 .thenReturn(false);
-        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(2002L), eq(10L), eq("REFERRAL")))
+        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(2002L), eq(10L), eq("referral")))
                 .thenReturn(false);
         lenient().when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(null);
         when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(2002L);
@@ -113,7 +113,7 @@ public class MileageRewardServiceTest {
     @Test
     void testProcessDailyRewards_withEmptyRides() {
         when(rideRepository.findByStatusAndCompletedAtBetween(
-                eq("COMPLETED"), any(), any())).thenReturn(Collections.emptyList());
+                eq("completed"), any(), any())).thenReturn(Collections.emptyList());
 
         mileageRewardService.processDailyRewards();
 

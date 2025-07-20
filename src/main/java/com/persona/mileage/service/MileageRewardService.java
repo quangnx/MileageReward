@@ -43,32 +43,32 @@ public class MileageRewardService {
         LocalDateTime start = yesterday.toLocalDate().atStartOfDay();
         LocalDateTime end = start.plusDays(1);
 
-        List<Ride> rides = rideRepository.findByStatusAndCompletedAtBetween("COMPLETED", start, end);
+        List<Ride> rides = rideRepository.findByStatusAndCompletedAtBetween("completed", start, end);
 
         for (Ride ride : rides) {
             try {
-                if (!rewardRepo.existsByUserIdAndRideIdAndType(ride.getUserId(), ride.getId(), "SELF")) {
+                if (!rewardRepo.existsByUserIdAndRideIdAndType(ride.getUserId(), ride.getId(), "self")) {
                     BigDecimal points = BigDecimal.valueOf(ride.getDistanceKm() * 0.01);
                     rewardRepo.save(new RewardTransaction(
                             null,
                             ride.getUserId(),
                             ride.getId(),
                             points,
-                            "SELF",
+                            "self",
                             LocalDateTime.now()
                     ));
                 }
 
                 Long referrerId = userRepository.findReferrerIdByUserId(ride.getUserId());
                 if (referrerId != null &&
-                        !rewardRepo.existsByUserIdAndRideIdAndType(referrerId, ride.getId(), "REFERRAL")) {
+                        !rewardRepo.existsByUserIdAndRideIdAndType(referrerId, ride.getId(), "referral")) {
                     try {
                         rewardRepo.save(new RewardTransaction(
                                 ride.getUserId(),
                                 referrerId,
                                 ride.getId(),
                                 BigDecimal.valueOf(ride.getDistanceKm() * 0.005),
-                                "REFERRAL",
+                                "referral",
                                 LocalDateTime.now()
                         ));
                     } catch (Exception e) {

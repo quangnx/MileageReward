@@ -17,6 +17,11 @@ public class Ride {
 
     // Constructors
     public Ride() {}
+    public Ride(Long id, Long userId, double distance) {
+        this.id = id;
+        this.userId = userId;
+        this.distanceKm = distance;
+    }
 
     public Ride(Long userId, double distanceKm, String status, LocalDateTime completedAt) {
         this.userId = userId;
