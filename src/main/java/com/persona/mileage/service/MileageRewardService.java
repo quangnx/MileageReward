@@ -5,6 +5,8 @@ import com.persona.mileage.entity.Ride;
 import com.persona.mileage.repository.RewardTransactionRepository;
 import com.persona.mileage.repository.RideRepository;
 import com.persona.mileage.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,6 +34,8 @@ public class MileageRewardService {
     private final RewardTransactionRepository rewardRepo;
     @Autowired
     private final UserRepository userRepository;
+    @PersistenceContext
+    private EntityManager entityManager; // inject entityManager
 
     @Value("${job.mileage.batch.size:500}")
     private int batchSize;
@@ -63,6 +68,8 @@ public class MileageRewardService {
             if (!rides.isEmpty()) {
                 processBatch(rides);
                 page++;
+                // After each batch, clear cache so that the next queries always have the latest data
+                entityManager.clear();
             }
         } while (!ridePage.isEmpty());
 
@@ -118,6 +125,7 @@ public class MileageRewardService {
                 log.error("Error processing rideId={}: {}", ride.getId(), e.getMessage(), e);
             }
         }
+        rideRepository.saveAll(rides);
     }
 
 }
