@@ -22,6 +22,7 @@ Spring Boot scheduled job to calculate and distribute mileage rewards, including
 - Java 17
 - Gradle
 - Docker & Docker Compose
+- MySQL client (for database setup)
 
 ---
 
@@ -48,6 +49,37 @@ This will:
 - Run the reward job app (cron runs automatically)
 
 ---
+
+## 🗃️ Database Initialization & Test Data
+
+### 1. Create the Database and Schema
+
+Use the following command to create the new database and all tables.
+Run this in your terminal (command line) with the MySQL client:
+
+```bash
+mysql -u <username> -p < mileage_schema.sql
+```
+
+* Replace `<username>` with your MySQL username.
+* Enter your password when prompted.
+* This command will execute all statements in `mileage_schema.sql` and create the `mileage_test` database with its schema.
+
+### 2. Load Sample Test Data
+
+Once the schema is created, run the following command to populate sample data:
+
+```bash
+mysql -u <username> -p mileage_test < sample_data.sql
+```
+
+* This will insert sample test data into your `mileage_test` database.
+* You can now query and test your Mileage Reward module with real data.
+
+> **Tips:**
+>
+> * Make sure you are in the same directory as the `.sql` files, or use the full path to each file.
+> * You can verify data using a tool like MySQL Workbench or by logging in with `mysql -u <username> -p mileage_test` and running `SHOW TABLES;` or `SELECT * FROM k_users LIMIT 10;`
 
 ## 🛠 Configuration
 
