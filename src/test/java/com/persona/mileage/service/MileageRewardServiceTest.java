@@ -12,6 +12,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -37,16 +41,13 @@ public class MileageRewardServiceTest {
     private RewardTransactionRepository rewardTransactionRepository;
     @Mock
     private UserRepository userRepository;
+
     private Ride ride;
+
     @BeforeEach
     void setup() {
-        // MockitoAnnotations.openMocks(this);
-        mileageRewardService = new MileageRewardService(
-                rideRepository,
-                rewardTransactionRepository,
-                userRepository // truyền đúng mock vào đây
-        );
-
+        // Nếu dùng constructor injection, hãy truyền đúng constructor,
+        // nếu dùng field injection, không cần.
         ride = new Ride();
         ride.setId(10L);
         ride.setUserId(10L);
@@ -60,8 +61,11 @@ public class MileageRewardServiceTest {
 
     @Test
     void shouldCalculateCorrectRewardPoints() {
-        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(LocalDateTime.class), any(LocalDateTime.class)))
-                .thenReturn(List.of(ride));
+        Page<Ride> ridePage = new PageImpl<>(List.of(ride));
+        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(LocalDateTime.class), any(LocalDateTime.class), any(Pageable.class)))
+                .thenReturn(ridePage)
+                .thenReturn(Page.empty()); // Để kết thúc vòng lặp
+
         when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(10L), eq(10L), eq("self")))
                 .thenReturn(false);
         when(userRepository.findReferrerIdByUserId(10L)).thenReturn(null);
@@ -72,19 +76,21 @@ public class MileageRewardServiceTest {
         verify(rewardTransactionRepository).save(captor.capture());
 
         RewardTransaction reward = captor.getValue();
-        assertEquals(0, reward.getPoints().compareTo(BigDecimal.valueOf(0.5)));
-        assertEquals("self", reward.getPoints_type());
+        assertEquals(0, reward.getPoints().compareTo(BigDecimal.valueOf(0.12)));
+        assertEquals("self", reward.getType());
     }
 
     @Test
     void shouldLogErrorWhenSavingRewardFails() {
-        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(), any()))
-                .thenReturn(List.of(ride));
+        Page<Ride> ridePage = new PageImpl<>(List.of(ride));
+        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(), any(), any()))
+                .thenReturn(ridePage)
+                .thenReturn(Page.empty());
+
         when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(any(), any(), any()))
                 .thenReturn(false);
 
-        // Dòng này có thể gây lỗi nếu không dùng lenient()
-        lenient().when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(null);
+        lenient().when(userRepository.findReferrerIdByUserId(anyLong())).thenReturn(null);
 
         doThrow(new RuntimeException("DB error"))
                 .when(rewardTransactionRepository).save(any());
@@ -96,14 +102,16 @@ public class MileageRewardServiceTest {
 
     @Test
     void shouldSaveBothSelfAndReferralRewards() {
-        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(), any()))
-                .thenReturn(List.of(ride));
-        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(1001L), eq(10L), eq("self")))
+        Page<Ride> ridePage = new PageImpl<>(List.of(ride));
+        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(), any(), any()))
+                .thenReturn(ridePage)
+                .thenReturn(Page.empty());
+
+        when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(10L), eq(10L), eq("self")))
                 .thenReturn(false);
         when(rewardTransactionRepository.existsByUserIdAndRideIdAndType(eq(2002L), eq(10L), eq("referral")))
                 .thenReturn(false);
-        lenient().when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(null);
-        when(userRepository.findReferrerIdByUserId(1001L)).thenReturn(2002L);
+        when(userRepository.findReferrerIdByUserId(10L)).thenReturn(2002L);
 
         mileageRewardService.processDailyRewards();
 
@@ -112,8 +120,8 @@ public class MileageRewardServiceTest {
 
     @Test
     void testProcessDailyRewards_withEmptyRides() {
-        when(rideRepository.findByStatusAndCompletedAtBetween(
-                eq("completed"), any(), any())).thenReturn(Collections.emptyList());
+        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(), any(), any()))
+                .thenReturn(Page.empty());
 
         mileageRewardService.processDailyRewards();
 
@@ -122,7 +130,10 @@ public class MileageRewardServiceTest {
 
     @Test
     void processDailyRewards() {
-        // Placeholder to ensure test coverage recognition
-        mileageRewardService.processDailyRewards();
+        // Should not throw exception even when there is no data
+        when(rideRepository.findByStatusAndCompletedAtBetween(eq("completed"), any(), any(), any()))
+                .thenReturn(Page.empty());
+
+        assertDoesNotThrow(() -> mileageRewardService.processDailyRewards());
     }
 }

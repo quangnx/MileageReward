@@ -1,6 +1,8 @@
 package com.persona.mileage.repository;
 
 import com.persona.mileage.entity.Ride;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,8 +20,10 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
                                          @Param("end") LocalDateTime end);
 
 
-    List<Ride> findByStatusAndCompletedAtBetween(String status, LocalDateTime start, LocalDateTime end);
-
+    Page<Ride> findByStatusAndCompletedAtBetween(String status, LocalDateTime start, LocalDateTime end, Pageable pageable);
+    Page<Ride> findByStatusAndCompletedAtBetweenAndIsRewardFalse(
+            String status, LocalDateTime start, LocalDateTime end, Pageable pageable
+    );
     // Optional: nếu bạn dùng phương thức tiện lợi
     default List<Ride> findRidesForYesterday() {
         LocalDateTime startOfYesterday = LocalDateTime.now().minusDays(1).toLocalDate().atStartOfDay();
