@@ -47,40 +47,45 @@ public class MileageRewardService {
 
         for (Ride ride : rides) {
             try {
+                // Điểm thưởng cho chính người đi xe
                 if (!rewardRepo.existsByUserIdAndRideIdAndType(ride.getUserId(), ride.getId(), "self")) {
                     BigDecimal points = BigDecimal.valueOf(ride.getDistanceKm() * 0.01);
-                    rewardRepo.save(new RewardTransaction(
-                            null,
+
+                    RewardTransaction selfReward = new RewardTransaction(
                             ride.getUserId(),
                             ride.getId(),
                             points,
-                            "self",
-                            LocalDateTime.now()
-                    ));
+                            RewardTransaction.PointsType.earn,
+                            "Thưởng cá nhân",
+                            "self"
+                    );
+                    rewardRepo.save(selfReward);
+                    log.info("✅ Self reward added for userId={} rideId={}", ride.getUserId(), ride.getId());
                 }
 
+                // Điểm thưởng cho người giới thiệu
                 Long referrerId = userRepository.findReferrerIdByUserId(ride.getUserId());
                 if (referrerId != null &&
                         !rewardRepo.existsByUserIdAndRideIdAndType(referrerId, ride.getId(), "referral")) {
-                    try {
-                        rewardRepo.save(new RewardTransaction(
-                                ride.getUserId(),
-                                referrerId,
-                                ride.getId(),
-                                BigDecimal.valueOf(ride.getDistanceKm() * 0.005),
-                                "referral",
-                                LocalDateTime.now()
-                        ));
-                    } catch (Exception e) {
-                        log.error("Error processing ride ID: {}", ride.getId(), e);
-                    }
 
+                    BigDecimal referralPoints = BigDecimal.valueOf(ride.getDistanceKm() * 0.005);
+
+                    RewardTransaction referralReward = new RewardTransaction(
+                            referrerId,
+                            ride.getId(),
+                            referralPoints,
+                            RewardTransaction.PointsType.earn,
+                            "Thưởng giới thiệu",
+                            "referral"
+                    );
+                    rewardRepo.save(referralReward);
+                    log.info("✅ Referral reward added for referrerId={} rideId={}", referrerId, ride.getId());
                 }
 
             } catch (Exception e) {
-                System.err.println("Error processing ride ID: " + ride.getId());
-                e.printStackTrace();
+                log.error("❌ Error processing ride ID: {}", ride.getId(), e);
             }
         }
     }
+
 }

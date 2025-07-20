@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "k_rides")
 public class Ride {
 
     @Id
@@ -13,6 +14,7 @@ public class Ride {
     private Long userId;
     private double distanceKm;
     private String status;
+    @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
     // Constructors

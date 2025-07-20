@@ -3,6 +3,7 @@ package com.persona.mileage.repository;
 import com.persona.mileage.entity.Ride;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -13,7 +14,8 @@ public interface RideRepository extends JpaRepository<Ride, Long> {
 
     // Lấy tất cả các chuyến đi hoàn thành vào ngày hôm qua
     @Query("SELECT r FROM Ride r WHERE r.completedAt BETWEEN :start AND :end")
-    List<Ride> findRidesCompletedBetween(LocalDateTime start, LocalDateTime end);
+    List<Ride> findRidesCompletedBetween(@Param("start") LocalDateTime start,
+                                         @Param("end") LocalDateTime end);
 
 
     List<Ride> findByStatusAndCompletedAtBetween(String status, LocalDateTime start, LocalDateTime end);

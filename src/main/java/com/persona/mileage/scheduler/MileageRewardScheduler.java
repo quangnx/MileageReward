@@ -18,7 +18,7 @@ public class MileageRewardScheduler {
 
     private final MileageRewardService mileageRewardService;
 
-    @Value("${job.mileage.reward.enabled:true}")
+    @Value("${job.mileage.reward.enabled}")
     private boolean jobEnabled;
 
     public MileageRewardScheduler(MileageRewardService mileageRewardService) {

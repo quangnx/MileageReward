@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    @Query("SELECT u.referrerId FROM Users u WHERE u.id = :userId")
+    @Query("SELECT u.referrerId FROM User u WHERE u.id = :userId")
     Long findReferrerIdByUserId(Long userId);
 }

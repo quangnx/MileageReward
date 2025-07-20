@@ -73,7 +73,7 @@ public class MileageRewardServiceTest {
 
         RewardTransaction reward = captor.getValue();
         assertEquals(0, reward.getPoints().compareTo(BigDecimal.valueOf(0.5)));
-        assertEquals("self", reward.getType());
+        assertEquals("self", reward.getPoints_type());
     }
 
     @Test
