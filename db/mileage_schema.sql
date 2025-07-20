@@ -50,13 +50,17 @@ CREATE TABLE `k_rides` (
   `reward_points_used` int DEFAULT '0',
   `distance_km` double unsigned NOT NULL,
   `ride_date` datetime DEFAULT NULL,
+  `is_reward` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `idx_k_rides_user_id` (`user_id`),
   KEY `idx_k_rides_driver_id` (`driver_id`),
   KEY `idx_k_rides_status` (`status`),
+  KEY `idx_k_rides_is_reward` (`is_reward`),
   CONSTRAINT `k_rides_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `k_users` (`id`),
   CONSTRAINT `k_rides_ibfk_2` FOREIGN KEY (`driver_id`) REFERENCES `k_users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4077 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 
 -- Table for storing customer payment history
 CREATE TABLE `k_payments` (
