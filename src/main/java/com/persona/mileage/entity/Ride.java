@@ -18,11 +18,14 @@ public class Ride {
     private LocalDateTime completedAt;
 
     // Constructors
-    public Ride() {}
+    public Ride() {
+        isReward = false;
+    }
     public Ride(Long id, Long userId, double distance) {
         this.id = id;
         this.userId = userId;
         this.distanceKm = distance;
+        isReward = false;
     }
 
     public Ride(Long userId, double distanceKm, String status, LocalDateTime completedAt) {
@@ -30,6 +33,7 @@ public class Ride {
         this.distanceKm = distanceKm;
         this.status = status;
         this.completedAt = completedAt;
+        isReward = false;
     }
 
     // Getters
@@ -67,4 +71,10 @@ public class Ride {
     public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
     }
+
+    @Column(name = "is_reward")
+    private Boolean isReward;
+
+    public Boolean getIsReward() { return isReward; }
+    public void setIsReward(Boolean isReward) { this.isReward = isReward; }
 }
