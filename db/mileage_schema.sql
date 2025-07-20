@@ -1,8 +1,8 @@
--- Tạo cơ sở dữ liệu mileage_test >> đổi thành tên khác
+-- Create database mileage_test >> change to another name if needed
 CREATE DATABASE IF NOT EXISTS mileage_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE mileage_test;
 
--- bảng tài xế
+-- Table for drivers
 CREATE TABLE k_drivers (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL DEFAULT '',
@@ -16,7 +16,7 @@ CREATE TABLE k_drivers (
     status ENUM('active', 'inactive', 'banned') DEFAULT 'active'
 );
 
--- Bảng người dùng
+-- Users table
 CREATE TABLE `k_users` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `phone` varchar(15) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE `k_users` (
   KEY `idx_k_users_phone` (`phone`)
 ) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Bảng chuyến đi
+-- Rides table
 CREATE TABLE `k_rides` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
@@ -58,9 +58,7 @@ CREATE TABLE `k_rides` (
   CONSTRAINT `k_rides_ibfk_2` FOREIGN KEY (`driver_id`) REFERENCES `k_users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4077 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
--- bảng lịch sử lưu thông tin thanh toán của khách hàng 
+-- Table for storing customer payment history
 CREATE TABLE `k_payments` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `ride_id` bigint NOT NULL,
@@ -78,7 +76,7 @@ CREATE TABLE `k_payments` (
   CONSTRAINT `k_payments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `k_users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1607 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Bảng thưởng
+-- Rewards table
 CREATE TABLE `k_reward_points` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
@@ -94,7 +92,7 @@ CREATE TABLE `k_reward_points` (
   CONSTRAINT `k_reward_points_ibfk_2` FOREIGN KEY (`ride_id`) REFERENCES `k_rides` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- bảng tham chiếu cho người giới thiệu 
+-- Reference table for referrals
 CREATE TABLE `k_referrals` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `referrer_id` bigint NOT NULL,
@@ -108,7 +106,7 @@ CREATE TABLE `k_referrals` (
   CONSTRAINT `k_referrals_ibfk_2` FOREIGN KEY (`referee_id`) REFERENCES `k_users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- View tổng điểm và quãng đường theo user
+-- View for user reward and distance summary
 CREATE OR REPLACE VIEW v_user_rewards_summary AS
 SELECT
     u.name AS name,
@@ -132,16 +130,16 @@ LEFT JOIN
 LEFT JOIN
     k_payments p ON r.id = p.ride_id AND u.id = p.user_id;
 
--- Function: chuyển đổi khoảng cách sang điểm
+-- Function: convert distance to points
 Drop PROCEDURE if exists calc_reward_points;
 CREATE FUNCTION calc_reward_points(distance_km DOUBLE)
 RETURNS INT
 DETERMINISTIC
 BEGIN
-    RETURN FLOOR(distance_km * 10); -- 1 km = 10 điểm
+    RETURN FLOOR(distance_km * 10); -- 1 km = 10 points
 END;
 
--- sinh cặp dữ liệu khách hàng và chuyến đi(khác với sinh dữ liệu theo bảng đơn)
+-- Generate pairs of customer and ride data (different from generating data per single table)
 drop procedure if exists sp_insert_bulk_users_drivers_rides;
 CREATE PROCEDURE sp_insert_bulk_users_drivers_rides(
     IN in_user_count INT,
@@ -167,7 +165,7 @@ BEGIN
     DECLARE end_loc VARCHAR(255);
     DECLARE new_user_id BIGINT;
 
-    -- 1. Tạo users
+    -- 1. Create users
     SET i = 0;
     WHILE i < in_user_count DO
         INSERT INTO k_users (name, phone, email, password_hash, referral_code)
@@ -181,13 +179,13 @@ BEGIN
         SET i = i + 1;
     END WHILE;
 
-    -- Lấy ID user range
+    -- Get user ID range
     SELECT MIN(id), MAX(id) INTO user_min, user_max FROM k_users ORDER BY id DESC LIMIT in_user_count;
 
-    -- 2. Tạo drivers đồng bộ user + driver
+    -- 2. Create drivers (sync user + driver)
     SET i = 0;
     WHILE i < in_driver_count DO
-        -- Tạo user trước
+        -- Create user first
         INSERT INTO k_users (name, phone, email, password_hash, referral_code)
         VALUES (
             CONCAT('Driver_', i),
@@ -198,7 +196,7 @@ BEGIN
         );
         SET new_user_id = LAST_INSERT_ID();
 
-        -- Tạo driver tương ứng
+        -- Create corresponding driver
         INSERT INTO k_drivers (
             id, license_number, car_plate, car_type, rating
         )
@@ -213,10 +211,10 @@ BEGIN
         SET i = i + 1;
     END WHILE;
 
-    -- Lấy ID driver range
+    -- Get driver ID range
     SELECT MIN(id), MAX(id) INTO driver_min, driver_max FROM k_drivers ORDER BY id DESC LIMIT in_driver_count;
 
-    -- 3. Tạo rides ngẫu nhiên giữa user & driver
+    -- 3. Generate random rides between user & driver
     SET i = 0;
     WHILE i < in_ride_count DO
         SET rand_user = FLOOR(RAND() * (user_max - user_min + 1)) + user_min;
@@ -250,7 +248,7 @@ BEGIN
     END WHILE;
 END;
 
--- Stored Procedure: tạo thưởng hằng ngày cho các chuyến completed hôm qua
+-- Stored Procedure: create daily rewards for completed rides yesterday
 Drop PROCEDURE if exists sp_process_daily_rewards;
 CREATE PROCEDURE sp_process_daily_rewards()
 BEGIN
@@ -270,7 +268,7 @@ BEGIN
       AND r.completed_at BETWEEN start_time AND end_time;
 END;
 
--- Tạo dữ liệu ngẫu nhiên cho chuyến đi
+-- Generate random ride data
 DROP PROCEDURE IF EXISTS sp_insert_random_k_rides;
 CREATE PROCEDURE sp_insert_random_k_rides(
     IN in_target_date DATE,
@@ -298,11 +296,11 @@ BEGIN
     WHILE i < in_row_count AND try_count < max_try DO
         SET try_count = try_count + 1;
 
-        -- Random user và driver từ khoảng
+        -- Random user and driver within range
         SET rand_user = FLOOR(RAND() * (in_user_id_max - in_user_id_min + 1)) + in_user_id_min;
         SET rand_driver = FLOOR(RAND() * (in_driver_id_max - in_driver_id_min + 1)) + in_driver_id_min;
 
-        -- Kiểm tra cả user và driver phải tồn tại trong k_users, và driver phải có trong k_drivers
+        -- Check that both user and driver exist in k_users, and driver exists in k_drivers
         IF EXISTS (SELECT 1 FROM k_users WHERE id = rand_user)
            AND EXISTS (
                SELECT 1
@@ -311,7 +309,7 @@ BEGIN
                WHERE u.id = rand_driver
            )
         THEN
-            -- Tạo dữ liệu ride
+            -- Generate ride data
             SET ride_status = ELT(FLOOR(1 + (RAND() * 4)), 'requested','confirmed','completed','cancelled');
             SET rand_fare = ROUND(RAND() * 500 + 20, 2);
             SET rand_distance = ROUND(RAND() * 30 + 1, 2);
@@ -320,7 +318,7 @@ BEGIN
             SET start_loc = CONCAT('Start-', FLOOR(RAND() * 100));
             SET end_loc = CONCAT('End-', FLOOR(RAND() * 100));
 
-            -- Nếu ride này đã tồn tại (cùng user, driver, thời điểm), thì update
+            -- If this ride already exists (same user, driver, time), update
             IF EXISTS (
                 SELECT 1 FROM k_rides
                 WHERE user_id = rand_user
@@ -343,7 +341,7 @@ BEGIN
                   AND driver_id = rand_driver 
                   AND requested_at = base_datetime;
             ELSE
-                -- Insert mới nếu chưa tồn tại
+                -- Insert new if not exists
                 INSERT INTO k_rides (
                     user_id, driver_id, car_type, start_location, end_location, fare, status,
                     requested_at, confirmed_at, completed_at, cancelled_at, reward_points_used, distance_km
@@ -359,20 +357,19 @@ BEGIN
                 );
             END IF;
 
-            -- Tăng số lượt thành công
+            -- Increase number of successful rounds
             SET i = i + 1;
         END IF;
     END WHILE;
 END;
 
--- Sinh lịch sử thanh toán ngẫu nhiên 
+-- Generate random payment history
 drop procedure if exists sp_insert_random_payments;
 CREATE PROCEDURE sp_insert_random_payments(
     IN in_payment_count INT,
     IN in_payment_date DATE
 )
 BEGIN
-    -- Gán nhãn 1 lần duy nhất cho khối BEGIN ... END
     proc: BEGIN
         DECLARE i INT DEFAULT 0;
         DECLARE rand_idx INT;
@@ -384,37 +381,37 @@ BEGIN
         DECLARE p_status ENUM('pending','success','failed');
         DECLARE p_time DATETIME;
 
-        -- Tạo bảng tạm chứa danh sách ride đủ điều kiện
+        -- Create a temporary table to store eligible rides
         CREATE TEMPORARY TABLE IF NOT EXISTS tmp_valid_rides AS
         SELECT id AS ride_id, user_id, fare
         FROM k_rides
         WHERE fare >= 10;
 
-        -- Đếm số lượng rides hợp lệ
+        -- Count number of valid rides
         SELECT COUNT(*) INTO total_rides FROM tmp_valid_rides;
 
-        -- Nếu không có ride hợp lệ thì kết thúc
+        -- If no valid ride, end
         IF total_rides = 0 THEN
             LEAVE proc;
         END IF;
 
         WHILE i < in_payment_count DO
-            -- Random chỉ số trong danh sách
+            -- Random index in the list
             SET rand_idx = FLOOR(RAND() * total_rides);
 
-            -- Lấy ride tại vị trí rand_idx
+            -- Get ride at rand_idx
             SELECT ride_id, user_id, fare
             INTO r_id, u_id, p_amount
             FROM tmp_valid_rides
             LIMIT 1 OFFSET rand_idx;
 
-            -- Random lại số tiền từ fare
+            -- Randomize amount from fare
             SET p_amount = ROUND(RAND() * (p_amount - 10) + 10, 2);
             SET p_method = ELT(FLOOR(1 + (RAND() * 4)), 'cash','card','momo','zalopay');
             SET p_status = ELT(FLOOR(1 + (RAND() * 3)), 'pending','success','failed');
             SET p_time = TIMESTAMP(in_payment_date, SEC_TO_TIME(FLOOR(RAND() * 86400)));
 
-            -- Chèn thanh toán
+            -- Insert payment record
             INSERT INTO k_payments (
                 ride_id, user_id, amount, payment_method, paid_at, status, transaction_ref
             )
@@ -425,7 +422,7 @@ BEGIN
             SET i = i + 1;
         END WHILE;
 
-        -- Dọn bảng tạm
+        -- Drop temporary table
         DROP TEMPORARY TABLE IF EXISTS tmp_valid_rides;
     END proc;
 END;
@@ -445,11 +442,11 @@ proc: BEGIN
     DECLARE attempt INT DEFAULT 0;
     DECLARE max_attempt INT DEFAULT 1000;
 
-    -- Lấy khoảng ID hợp lệ từ k_users
+    -- Get valid user ID range
     SELECT MIN(id), MAX(id) INTO ref_min, ref_max FROM k_users;
     SELECT COUNT(*) INTO total_users FROM k_users;
 
-    -- Nếu quá ít user, thì dừng
+    -- If too few users, stop
     IF total_users < 2 THEN
         LEAVE proc;
     END IF;
@@ -457,14 +454,14 @@ proc: BEGIN
     WHILE i < in_count AND attempt < max_attempt DO
         SET attempt = attempt + 1;
 
-        -- Random 2 user khác nhau
+        -- Randomly select 2 different users
         SET rand_referrer = FLOOR(RAND() * (ref_max - ref_min + 1)) + ref_min;
         SET rand_referred = FLOOR(RAND() * (ref_max - ref_min + 1)) + ref_min;
 
-        -- Không cho tự giới thiệu
+        -- No self-referral
         IF rand_referrer <> rand_referred THEN
 
-            -- Kiểm tra cả 2 user tồn tại và chưa có bản ghi referral này
+            -- Check both users exist and referral record does not exist yet
             IF EXISTS (SELECT 1 FROM k_users WHERE id = rand_referrer)
                AND EXISTS (SELECT 1 FROM k_users WHERE id = rand_referred)
                AND NOT EXISTS (
@@ -486,7 +483,6 @@ proc: BEGIN
     END proc ;
 END;
 
--- Index hỗ trợ truy vấn theo ngày
+-- Indexes to support queries by date
 CREATE INDEX idx_rides_completed_at ON k_rides(completed_at);
 CREATE INDEX idx_rides_status ON k_rides(status);
-

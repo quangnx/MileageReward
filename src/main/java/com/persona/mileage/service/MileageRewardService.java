@@ -47,7 +47,7 @@ public class MileageRewardService {
 
         for (Ride ride : rides) {
             try {
-                // Điểm thưởng cho chính người đi xe
+                //Bonus points for the rider himself
                 if (!rewardRepo.existsByUserIdAndRideIdAndType(ride.getUserId(), ride.getId(), "self")) {
                     BigDecimal points = BigDecimal.valueOf(ride.getDistanceKm() * 0.01);
 
@@ -56,14 +56,14 @@ public class MileageRewardService {
                             ride.getId(),
                             points,
                             RewardTransaction.PointsType.earn,
-                            "Thưởng cá nhân",
+                            "Personal bonus",
                             "self"
                     );
                     rewardRepo.save(selfReward);
                     log.info("✅ Self reward added for userId={} rideId={}", ride.getUserId(), ride.getId());
                 }
 
-                // Điểm thưởng cho người giới thiệu
+                // Referrer Bonus Points
                 Long referrerId = userRepository.findReferrerIdByUserId(ride.getUserId());
                 if (referrerId != null &&
                         !rewardRepo.existsByUserIdAndRideIdAndType(referrerId, ride.getId(), "referral")) {
@@ -75,7 +75,7 @@ public class MileageRewardService {
                             ride.getId(),
                             referralPoints,
                             RewardTransaction.PointsType.earn,
-                            "Thưởng giới thiệu",
+                            "Referral Bonus",
                             "referral"
                     );
                     rewardRepo.save(referralReward);

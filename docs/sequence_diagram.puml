@@ -1,4 +1,19 @@
 @startuml
 actor Scheduler
-participant MileageRewardService
+participant "MileageRewardService" as Service
+participant "RideRepository (DB)" as RideRepo
+participant "RewardTransactionRepository (DB)" as RewardRepo
+
+Scheduler -> Service : triggerJob() (2:00 AM daily)
+Service -> RideRepo : getCompletedRides(date=yesterday)
+RideRepo --> Service : List<Ride>
+alt For each ride
+    Service -> Service : calculateMileageReward(ride)
+    Service -> RewardRepo : saveRewardForCustomer(customer, mileagePoint)
+    alt Has Referrer
+        Service -> Service : calculateReferralReward(ride)
+        Service -> RewardRepo : saveRewardForReferrer(referrer, referralPoint)
+    end
+end
+Service -> Service : markRidesAsRewarded(rides)
 @enduml
