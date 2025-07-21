@@ -1,6 +1,3 @@
-Dưới đây là **bản Markdown** chuyển đổi từ format bạn cung cấp. Các đoạn PlantUML, bảng, danh sách... đều được trình bày rõ ràng, dễ đọc.
-
----
 
 # Solution Design: Mileage Reward Module
 
